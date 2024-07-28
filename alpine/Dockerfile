@@ -33,7 +33,7 @@ RUN git clone --branch=$pandoc_commit --depth=1 --quiet \
 
 # Remove the settings that ship with pandoc, unless we're building the main
 # branch.
-RUN [ "${pandoc_commit}" = "main" ] || rm -f cabal.project
+RUN [ "${pandoc_commit}" = "main" ] || rm -f /usr/src/pandoc/cabal.project
 
 COPY ./alpine/freeze/pandoc-$pandoc_commit.project.freeze \
      /usr/src/pandoc/cabal.project.freeze
@@ -43,17 +43,21 @@ WORKDIR /usr/src/pandoc
 # Add pandoc-crossref to project
 ARG without_crossref=
 RUN test -n "$without_crossref" || \
-    printf "extra-packages: pandoc-crossref\n" > cabal.project.local;
+    printf "extra-packages: pandoc-crossref\n" > cabal.project.local
 
 # Additional projects to compile alongside pandoc
 ARG extra_packages="pandoc-cli pandoc-crossref"
 
+# Separate cabal update and build steps to debug issues
+RUN cabal update
+
+# Verify cabal update
+RUN cabal list
+
 # Build pandoc and pandoc-crossref. The `allow-newer` is required for
 # when pandoc-crossref has not been updated yet, but we want to build
 # anyway.
-RUN cabal update \
-  && cabal build \
-      --allow-newer 'lib:pandoc' \
+RUN cabal build --allow-newer 'lib:pandoc' \
       --disable-tests \
       --disable-bench \
       --jobs \
