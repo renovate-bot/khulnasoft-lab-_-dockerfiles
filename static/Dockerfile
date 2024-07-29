@@ -1,5 +1,5 @@
 # Builder
-ARG base_image_version=3.14
+ARG base_image_version=3.20
 FROM alpine:$base_image_version AS static-builder-base
 WORKDIR /app
 
